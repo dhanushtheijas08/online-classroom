@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String             @id @default(cuid())
+  name          String
+  email         String             @unique
+  emailVerified Boolean
+  image         String?
+  role          UserRole           @default(STUDENT)
+  classrooms    ClassroomStudent[]
+  quizzes       Quiz[]
+  createdAt     DateTime
+  updatedAt     DateTime
+  accounts      Account[]          @relation("UserAccounts")
+  sessions      Session[]          @relation("UserSessions")
+  Classroom     Classroom[]
+  Response      Response[]
+
+  @@map("user")
+}
+
+model Classroom {
+  id            String             @id @default(cuid())
+  name          String
+  classroomType ClassroomType      @default(PUBLIC)
+  classroomProfile String?
+  classroomSubject String?
+  classroomCode     String?
+  maxStudents      Int?
+  teacher       User               @relation(fields: [teacherId], references: [id])
+  teacherId     String
+  students      ClassroomStudent[]
+  createdAt     DateTime           @default(now())
+  Quiz          Quiz[]
+  tags        ClassroomTag[]
+
+  @@map("classroom")
+}
+
+model Tag {
+  id          String         @id @default(uuid())
+  name        String         @unique
+  classrooms  ClassroomTag[]
+
+  @@map("tags")
+}
+
+model ClassroomTag {
+  classroom   Classroom   @relation(fields: [classroomId], references: [id])
+  classroomId String
+  tag         Tag         @relation(fields: [tagId], references: [id])
+  tagId       String
+
+  @@id([classroomId, tagId])  
+  @@map("classroom_tags")
+}
+
+model ClassroomStudent {
+  id          String    @id @default(cuid())
+  classroom   Classroom @relation(fields: [classroomId], references: [id])
+  classroomId String
+  student     User      @relation(fields: [studentId], references: [id])
+  studentId   String
+  joinedAt    DateTime  @default(now())
+
+  @@map("classroom_student")
+}
+
+model Quiz {
+  id                  String     @id @default(cuid())
+  title               String
+  teacher             User       @relation(fields: [teacherId], references: [id])
+  teacherId           String
+  class               Classroom  @relation(fields: [classId], references: [id])
+  classId             String
+  totalDuration       Int?
+  durationPerQuestion Int?
+  questions           Question[]
+  createdAt           DateTime   @default(now())
+  Response            Response[]
+  startsAt DateTime @default(now())
+  endsAt DateTime
+  quizStatus QuizStatus @default(ACTIVE)
+  
+  @@map("quiz")
+}
+
+model Question {
+  id            String   @id @default(cuid())
+  quiz          Quiz     @relation(fields: [quizId], references: [id])
+  quizId        String
+  content       String
+  questionType  QuestionType @default(MULTIPLE_CHOICE)
+  options       String[]
+  correctAnswer String
+  points        Int
+  createdAt     DateTime @default(now())
+
+  @@map("question")
+}
+
+model Response {
+  id          String    @id @default(cuid())
+  quiz        Quiz      @relation(fields: [quizId], references: [id])
+  quizId      String
+  student     User      @relation(fields: [studentId], references: [id])
+  studentId   String
+  answers     Json
+  score       Int?
+  submittedAt DateTime?
+
+  @@map("response")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, name: "UserSessions")
+
+  @@map("session")
+}
+
+model Account {
+  id           String    @id
+  accountId    String
+  providerId   String
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade, name: "UserAccounts")
+  accessToken  String?
+  refreshToken String?
+  idToken      String?
+  expiresAt    DateTime?
+  password     String?
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+
+  @@map("verification")
+}
+
+enum UserRole {
+  TEACHER
+  STUDENT
+}
+
+enum ClassroomType {
+  PUBLIC
+  PRIVATE
+}
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+}
+
+enum QuizStatus {
+  ACTIVE
+  COMPLETED
+  DRAFT
+}
+
+
+// Enum for roles
+enum UserSystemEnum {
+  SYSTEM
+  USER
+}
+
+model Chat {
+  id         Int      @id @default(autoincrement())
+  pdfName    String
+  pdfUrl     String
+  createdAt  DateTime @default(now())
+  userId     String   // Corresponds to varchar("user_id", { length: 256 }) in Drizzle
+  fileKey    String
+  messages   Message[] @relation("ChatMessages")
+}
+
+// Message table
+model Message {
+  id         Int           @id @default(autoincrement())
+  chatId     Int
+  content    String
+  createdAt  DateTime      @default(now())
+  role       UserSystemEnum
+  // Relation fields
+  chat       Chat          @relation("ChatMessages", fields: [chatId], references: [id])
+}
