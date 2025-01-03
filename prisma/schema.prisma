@@ -183,19 +183,17 @@ enum UserSystemEnum {
 }
 
 model Chat {
-  id         Int      @id @default(autoincrement())
+  id         String    @id
   pdfName    String
   pdfUrl     String
-  createdAt  DateTime @default(now())
-  userId     String   // Corresponds to varchar("user_id", { length: 256 }) in Drizzle
-  fileKey    String
+  createdAt  DateTime  @default(now())
+  userId     String
   messages   Message[] @relation("ChatMessages")
 }
 
-// Message table
 model Message {
   id         Int           @id @default(autoincrement())
-  chatId     Int
+  chatId     String
   content    String
   createdAt  DateTime      @default(now())
   role       UserSystemEnum

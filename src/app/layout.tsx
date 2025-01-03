@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import ReactQueryProvider from "@/components/ReactQueryProvider";
 
 const leagueSpartan = League_Spartan({
   subsets: ["latin"],
@@ -22,10 +23,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={cn("font-sans antialiased", leagueSpartan.variable)}>
-        <ThemeProvider attribute="class" defaultTheme="light">
-          {children}
-          <Toaster />
-        </ThemeProvider>
+        <ReactQueryProvider>
+          <ThemeProvider attribute="class" defaultTheme="light">
+            {children}
+            <Toaster />
+          </ThemeProvider>
+        </ReactQueryProvider>
       </body>
     </html>
   );
